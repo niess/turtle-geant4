@@ -1,0 +1,10 @@
+sudo: required
+
+services:
+  - docker
+
+before_install:
+  - docker build -t niess/geant4-turtle .
+
+script:
+  - docker run niess/geant4-turtle make test
