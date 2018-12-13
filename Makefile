@@ -20,7 +20,7 @@ test: bin/test-run
 clean:
 	@rm -rf bin build lib
 
-MODS := client ecef error io map projection stack stepper tinydir
+MODS := client ecef error io list map projection stack stepper tinydir
 
 ifeq ($(TURTLE_USE_GRD), 1)
 	MODS += grd

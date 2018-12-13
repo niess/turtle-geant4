@@ -515,9 +515,9 @@ void G4Turtle::SetTopographyData(G4String global, G4String local,
         if (default_ground_level > -6371E+03)
                 turtle_stepper_add_flat(gStepper, default_ground_level);
         if (gStack != NULL)
-                turtle_stepper_add_stack(gStepper, gStack);
+                turtle_stepper_add_stack(gStepper, gStack, 0);
         if (gMap != NULL)
-                turtle_stepper_add_map(gStepper, gMap);
+                turtle_stepper_add_map(gStepper, gMap, 0.);
 }
 
 G4double G4Turtle::GetBottomLevel() const
@@ -590,7 +590,7 @@ G4ThreeVector G4Turtle::GetECEFPosition(
 
         double position[3];
         turtle_stepper_position(gStepper, latitude, longitude,
-            height / CLHEP::m, position, NULL);
+            height / CLHEP::m, 0, position, NULL);
 
         return G4ThreeVector(position[0], position[1], position[2]) * CLHEP::m;
 }

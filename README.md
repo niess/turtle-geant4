@@ -1,3 +1,4 @@
+[![Turtle version](https://img.shields.io/badge/turtle-v0.6-blue.svg)](https://github.com/niess/turtle/releases/v0.6)
 [![Build Status](https://travis-ci.com/niess/turtle-geant4.svg?branch=master)](https://travis-ci.com/niess/turtle-geant4)
 
 # G4TURTLE
@@ -31,7 +32,7 @@ to handle very large topographic data sets.
 Extra volumes can be placed inside the topography with the
 `G4Turtle::PVPlacement` method, e.g. a detector. The daughter volumes are placed
 by specifying their geographic coordinates, i.e. latitude, longitude, height
-above ground, etc. Note that their prevail over the topography.
+above ground, etc. Note that they prevail over the topography.
 
 ## Installation
 
