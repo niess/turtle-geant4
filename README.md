@@ -1,4 +1,4 @@
-[![Turtle version](https://img.shields.io/badge/turtle-v0.6-blue.svg)](https://github.com/niess/turtle/releases/v0.6)
+[![Turtle version](https://img.shields.io/badge/turtle-v0.7-blue.svg)](https://github.com/niess/turtle/releases/v0.7)
 [![Build Status](https://travis-ci.com/niess/turtle-geant4.svg?branch=master)](https://travis-ci.com/niess/turtle-geant4)
 
 # G4TURTLE
@@ -39,20 +39,41 @@ above ground, etc. Note that they prevail over the topography.
 Building the [G4Turtle][G4Turtle] class requires a vanilla Geant4 installation,
 including both header files and libraries. Builds have been successfully tested
 with v10.0 to v10.5 of Geant4, e.g. using [Ubuntu Docker images](https://hub.docker.com/r/andreadotti/geant4-dev/).
-In addition, the [TURTLE][TURTLE] library is required as well.
 
-On UNIX like systems, the provided [Makefile](Makefile) builds
-[G4Turtle][G4Turtle] as a static library, including [TURTLE][TURTLE]. Note that
-the [TURTLE][TURTLE] source is expected to be located at the root level under
-the `turtle` directory. Note also that you'll need to link your Geant4
-executable to `libpng` and `libtiff` as well, if these dependencies haven't been
-disabled in the [Makefile](Makefile). On Debian and derivatives (e.g. Ubuntu)
-these dependencies can be installed as:
+A [CMakeLists.txt](CMakeLists.txt) file is provided for building both
+[TURTLE][TURTLE] and [G4Turtle][G4Turtle] as shared libraries. This can be done
+for example as:
 ```bash
-sudo apt install pkg-config libpng-dev libtiff-dev
+cd g4turtle
+mkdir build && cd build
+cmake ..
+make install
 ```
-The `test` target in the [Makefile](Makefile) provides a complete example of an
-executable build chain, on UNIX like systems.
+
+- By default the installation is done to the `g4turtle` source directory, under
+  `lib` and `include`. You can specify a different install location as:
+  ```bash
+  cmake .. -DCMAKE_INSTALL_PREFIX=/path/to/install
+  ```
+
+- The [test](test) executable can be built as:
+  ```bash
+  make run-g4goupil
+  ```
+
+- The default build of [TURTLE][TURTLE] requires `libpng-dev` and `libtiff-dev`
+  for reading GeoTIFF and PNG topography data. On Debian and derivatives (e.g.
+  Ubuntu) these dependencies can be installed as:
+  ```bash
+  sudo apt install pkg-config libpng-dev libtiff-dev
+  ```
+
+- Alternatively, you can build your own version of [TURTLE][TURTLE], e.g. with
+  GEOTIFF disabled and link to it as:
+  ```bash
+  cmake .. -DTURTLE_PREFIX=/path/to/turtle/install
+  ```
+
 
 ## License
 

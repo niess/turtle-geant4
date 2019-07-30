@@ -9,9 +9,7 @@ RUN apt-get clean
 
 # Upload the sources to the container
 WORKDIR /usr/local/turtle-geant4
-COPY Makefile .
+COPY CMakeLists.txt .
 COPY src ./src/
 COPY test ./test/
-
-# Fetch the HEAD of the TURTLE library
-RUN git clone https://github.com/niess/turtle
+COPY .travis ./.travis/

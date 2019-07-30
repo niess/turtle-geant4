@@ -7,4 +7,4 @@ before_install:
   - docker build -t niess/geant4-turtle .
 
 script:
-  - docker run niess/geant4-turtle make test
+  - docker run niess/geant4-turtle .travis/script.sh
