@@ -37,6 +37,8 @@ class G4Turtle
         /* Geant4 API */
         G4LogicalVolume * GetLogicalVolume() const;
         G4VPhysicalVolume * GetPhysicalVolume() const;
+        G4LogicalVolume * GetRockLogicalVolume() const;
+        G4LogicalVolume * GetAirLogicalVolume() const;
         G4Material * GetAirMaterial() const;
         G4Material * GetRockMaterial() const;
         void SetAirMaterial(G4Material * material);

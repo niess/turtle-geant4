@@ -449,6 +449,16 @@ G4VPhysicalVolume * G4Turtle::GetPhysicalVolume() const
         return gPhysical;
 }
 
+G4LogicalVolume * G4Turtle::GetRockLogicalVolume() const
+{
+        return gRockLogical;
+}
+
+G4LogicalVolume * G4Turtle::GetAirLogicalVolume() const
+{
+        return gAirLogical;
+}
+
 /* Get an instance of the G4turtle */
 G4Turtle * G4Turtle::GetInstance()
 {
