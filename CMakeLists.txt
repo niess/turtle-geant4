@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.0.0)
 project (G4TURTLE
     LANGUAGES CXX
-    VERSION 0.10
+    VERSION 0.11
 )
 
 include (ExternalProject)
