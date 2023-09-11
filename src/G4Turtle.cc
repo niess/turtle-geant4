@@ -157,7 +157,7 @@ static enum medium GetMedium(double position[3], G4bool protect=false)
 
         if ((layer[0] < 0) || (altitude > gTopLevel) || (altitude < gBottomLevel))
                 medium = MEDIUM_EXIT;
-        else if (altitude > ground[0])
+        else if (layer[0] == 1)
                 medium = MEDIUM_AIR;
         else
                 medium = MEDIUM_ROCK;
