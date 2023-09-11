@@ -1,4 +1,4 @@
-[![Turtle version](https://img.shields.io/badge/turtle-v0.7-blue.svg)](https://github.com/niess/turtle/releases/v0.7)
+[![Turtle version](https://img.shields.io/badge/turtle-v0.11-blue.svg)](https://github.com/niess/turtle/releases/v0.11)
 [![Build Status](https://travis-ci.com/niess/turtle-geant4.svg?branch=master)](https://travis-ci.com/niess/turtle-geant4)
 
 # G4TURTLE
