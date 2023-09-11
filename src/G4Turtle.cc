@@ -117,10 +117,10 @@ static void BuildDaughters()
 static enum medium GetMedium(double position[3], G4bool protect=false)
 {
         enum medium medium = MEDIUM_EXIT;
-        double altitude, ground;
-        int layer;
+        double altitude, ground[2];
+        int layer[2];
         turtle_stepper_step(gStepper, position, NULL, NULL, NULL, &altitude,
-            &ground, NULL, &layer);
+            ground, NULL, layer);
 
         /* Check the sub-volumes */
         if (!gDaughters.empty()) {
@@ -155,9 +155,9 @@ static enum medium GetMedium(double position[3], G4bool protect=false)
                 }
         }
 
-        if ((layer < 0) || (altitude > gTopLevel) || (altitude < gBottomLevel))
+        if ((layer[0] < 0) || (altitude > gTopLevel) || (altitude < gBottomLevel))
                 medium = MEDIUM_EXIT;
-        else if (altitude > ground)
+        else if (layer[0] == 1)
                 medium = MEDIUM_AIR;
         else
                 medium = MEDIUM_ROCK;
@@ -212,10 +212,10 @@ static G4double GetStepLength(const G4ThreeVector & p, const G4ThreeVector & v)
             p[2] + v[2] * gstep);
         double position1[3] = { p1[0] * m, p1[1] * m, p1[2] * m };
 
-        double altitude, ground;
-        int layer;
+        double altitude, ground[2];
+        int layer[2];
         turtle_stepper_step(gStepper, position1, NULL, NULL, NULL, &altitude,
-            &ground, NULL, &layer);
+            ground, NULL, layer);
 
         /* Check the end step medium */
         enum medium medium0 = gMedium, medium1 = GetMedium(position1);
@@ -447,6 +447,16 @@ G4LogicalVolume * G4Turtle::GetLogicalVolume() const
 G4VPhysicalVolume * G4Turtle::GetPhysicalVolume() const
 {
         return gPhysical;
+}
+
+G4LogicalVolume * G4Turtle::GetRockLogicalVolume() const
+{
+        return gRockLogical;
+}
+
+G4LogicalVolume * G4Turtle::GetAirLogicalVolume() const
+{
+        return gAirLogical;
 }
 
 /* Get an instance of the G4turtle */
