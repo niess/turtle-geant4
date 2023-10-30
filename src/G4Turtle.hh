@@ -60,17 +60,18 @@ class G4Turtle
         G4double GetResolutionFactor() const;
         void SetApproximationRange(G4double range);
         G4double GetApproximationRange() const;
-
-        /* FIXME: private, ECEF conversion utilities */
-        G4ThreeVector GetECEFPosition(
-            G4double latitude, G4double longitude, G4double height) const;
-        G4ThreeVector GetECEFDirection(G4double latitude,
-            G4double longitude, G4double azimuth, G4double elevation) const;
         
         void SetLocalFrame(G4double latitude, G4double longitude, G4double height=0.);
 
   protected:
         G4Turtle();
+        
+        /* FIXME: private, ECEF conversion utilities */
+        G4ThreeVector GetECEFPosition(
+            G4double latitude, G4double longitude, G4double height) const;
+        
+        G4ThreeVector GetECEFDirection(G4double latitude,
+            G4double longitude, G4double azimuth, G4double elevation) const;
 };
 
 #endif
