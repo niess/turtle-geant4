@@ -55,16 +55,23 @@ static struct turtle_stack * gStack = 0;
 static struct turtle_map * gMap = 0;
 static struct turtle_stepper * gStepper = 0;
 
-static G4double gResolutionFactor = 1E-02;
-static G4double gSlopeFactor = 0.4;
-static G4double gApproximationRange = 1.;
+static double gResolutionFactor = 1E-02;
+static double gSlopeFactor = 0.4;
+static double gApproximationRange = 1.;
 
-static G4double gBottomLevel = -11.5E+03;
-static G4double gTopLevel = 9.5E+03;
+static G4double gBottomLevel = -11.5E+03 * CLHEP::m;
+static G4double gTopLevel = 9.5E+03 * CLHEP::m;
 
 enum medium { MEDIUM_UNKNOWN, MEDIUM_AIR, MEDIUM_ROCK, MEDIUM_EXIT,
     MEDIUM_OTHER };
 static enum medium gMedium = MEDIUM_UNKNOWN;
+
+static G4AffineTransform gAffineTransform, gAffineTransformInv;
+
+static G4double StepperStep(G4ThreeVector position,
+        G4double * altitude=nullptr, G4double * ground=nullptr,
+        int * layer=nullptr);
+
 
 #ifdef G4USE_STD11
 /* If C++11 is used we can store the daughter data in a Tuple */
@@ -114,20 +121,16 @@ static void BuildDaughters()
 }
 
 /* Get the medium at the given position */
-static enum medium GetMedium(double position[3], G4bool protect=false)
+static enum medium GetMedium(const G4ThreeVector& position, G4bool protect)
 {
         enum medium medium = MEDIUM_EXIT;
-        double altitude, ground[2];
+        G4double altitude, ground[2];
         int layer[2];
-        turtle_stepper_step(gStepper, position, NULL, NULL, NULL, &altitude,
-            ground, NULL, layer);
+        
+        StepperStep(position, &altitude, ground, layer);
 
         /* Check the sub-volumes */
         if (!gDaughters.empty()) {
-                const double m = CLHEP::m;
-                G4ThreeVector global(position[0] * m, position[1] * m,
-                    position[2] * m); 
-
                 G4VPhysicalVolume * current = 0;
                 if (protect) {
                         /* Get the current volume from the tracking */
@@ -149,7 +152,7 @@ static enum medium GetMedium(double position[3], G4bool protect=false)
                                 continue;
                         }
                         G4ThreeVector local =
-                            DAUGHTER_GET_TRANSFORM(i).TransformPoint(global);
+                            DAUGHTER_GET_TRANSFORM(i).TransformPoint(position);
                         if (DAUGHTER_GET_SOLID(i)->Inside(local) != kOutside)
                                 return MEDIUM_OTHER;
                 }
@@ -172,9 +175,7 @@ static enum medium GetMedium(const G4ThreeVector & p)
 {
         BuildDaughters();
 
-        const double m = 1. / CLHEP::m;
-        double position[3] = { p[0] * m, p[1] * m, p[2] * m };
-        return GetMedium(position, true);
+        return GetMedium(p, true);
 }
 
 /* Get the optimistic step length, taking daughter volumes into account */
@@ -182,13 +183,8 @@ static G4double GetStepLength(const G4ThreeVector & p, const G4ThreeVector & v)
 {
         BuildDaughters();
 
-        const double m = 1. / CLHEP::m;
-        double position0[3] = { p[0] * m, p[1] * m, p[2] * m };
-
-        /* Compute the step length */
-        double step;
-        turtle_stepper_step(gStepper, position0, NULL, NULL, NULL, NULL,
-            NULL, &step, NULL);
+        /* Compute the step length */        
+        G4double step = StepperStep(p);
 
         /* Restrict the step for sub-volumes */
         for (std::list<Daughter>::iterator i = gDaughters.begin();
@@ -198,7 +194,7 @@ static G4double GetStepLength(const G4ThreeVector & p, const G4ThreeVector & v)
                 G4ThreeVector u = transform.TransformAxis(v);
 
                 const G4double d =
-                    DAUGHTER_GET_SOLID(i)->DistanceToIn(r, u) / CLHEP::m;
+                    DAUGHTER_GET_SOLID(i)->DistanceToIn(r, u);
                 if (d < step && d > 0.)
                         step = d;
         }
@@ -207,28 +203,25 @@ static G4double GetStepLength(const G4ThreeVector & p, const G4ThreeVector & v)
          * proceed through a G4ThreeVector using Geant units, as if this
          * was a Geant4 step
          */
-        const double gstep = step * CLHEP::m;
-        G4ThreeVector p1(p[0] + v[0] * gstep, p[1] + v[1] * gstep,
-            p[2] + v[2] * gstep);
-        double position1[3] = { p1[0] * m, p1[1] * m, p1[2] * m };
+        G4ThreeVector p1(p[0] + v[0] * step, p[1] + v[1] * step,
+            p[2] + v[2] * step);
 
-        double altitude, ground[2];
+        G4double altitude, ground[2];
         int layer[2];
-        turtle_stepper_step(gStepper, position1, NULL, NULL, NULL, &altitude,
-            ground, NULL, layer);
+        StepperStep(p1, &altitude, ground, layer);
 
         /* Check the end step medium */
-        enum medium medium0 = gMedium, medium1 = GetMedium(position1);
-        if (medium0 == medium1) return step * CLHEP::m;
+        enum medium medium0 = gMedium, medium1 = GetMedium(p1, false);
+        if (medium0 == medium1) return step;
 
         /* Locate the medium change with a binary search */
-        double ds0 = 0., ds1 = step;
-        while (ds1 - ds0 > 1E-08) {
-                const double ds2 = 0.5 * (ds0 + ds1);
-                double position2[3] = { position0[0] + v[0] * ds2,
-                    position0[1] + v[1] * ds2, position0[2] + v[2] * ds2 };
+        G4double ds0 = 0., ds1 = step;
+        while (ds1 - ds0 > 1E-05) {
+                const G4double ds2 = 0.5 * (ds0 + ds1);
+                G4ThreeVector position2(p[0] + v[0] * ds2,
+                    p[1] + v[1] * ds2, p[2] + v[2] * ds2);
 
-                enum medium medium2 = GetMedium(position2);
+                enum medium medium2 = GetMedium(position2, false);
                 if (medium2 == medium0) {
                         ds0 = ds2;
                 } else {
@@ -237,7 +230,7 @@ static G4double GetStepLength(const G4ThreeVector & p, const G4ThreeVector & v)
         }
         step = ds1;
 
-        return step * CLHEP::m;
+        return step;
 }
 
 /* Generic solid for encapsulating TURTLE */
@@ -532,22 +525,22 @@ void G4Turtle::SetTopographyData(G4String global, G4String local,
 
 G4double G4Turtle::GetBottomLevel() const
 {
-        return gBottomLevel * CLHEP::m;
+        return gBottomLevel;
 }
 
 void G4Turtle::SetBottomLevel(G4double level)
 {
-        gBottomLevel = level / CLHEP::m;
+        gBottomLevel = level;
 }
 
 G4double G4Turtle::GetTopLevel() const
 {
-        return gTopLevel * CLHEP::m;
+        return gTopLevel;
 }
 
 void G4Turtle::SetTopLevel(G4double level)
 {
-        gTopLevel = level / CLHEP::m;
+        gTopLevel = level;
 }
 
 void G4Turtle::SetSlopeFactor(G4double factor)
@@ -616,28 +609,46 @@ G4ThreeVector G4Turtle::GetECEFDirection(G4double latitude,
         return G4ThreeVector(direction[0], direction[1], direction[2]);
 }
 
-G4PVPlacement * G4Turtle::PVPlacement(G4double latitude, G4double longitude,
-    G4double height, G4double azimuth, G4double zenith, G4double intrinsic,
-    G4LogicalVolume * logical, const G4String & name, G4bool many, G4int copyNo)
+void G4Turtle::SetLocalFrame(G4double latitude, G4double longitude, G4double height)
 {
-        /* Get the translation vector */
-        G4ThreeVector translation = this->GetECEFPosition(
-            latitude, longitude, height);
+    /* Get the translation vector */
+    G4ThreeVector translation = this->GetECEFPosition(
+        latitude, longitude, height);
 
-        /* Build the rotation matrix */
-        const G4double pi2 = 90. * CLHEP::deg;
-        G4ThreeVector ux = this->GetECEFDirection(
-            latitude, longitude, azimuth - pi2, 0.);
-        G4ThreeVector uy = this->GetECEFDirection(
-            latitude, longitude, azimuth - 2 * pi2, zenith);
-        G4ThreeVector uz = this->GetECEFDirection(
-            latitude, longitude, azimuth, pi2 - zenith);
-        G4RotationMatrix * rotation = new G4RotationMatrix;
-        rotation->setRows(ux, uy, uz);
-        if (intrinsic)
-                *rotation *= G4RotationMatrix(uz, intrinsic).inverse();
+    /* Build the rotation matrix */
+    const G4double pi2 = 90. * CLHEP::deg;
+    G4ThreeVector ux = this->GetECEFDirection(
+        latitude, longitude, pi2, 0.);
+    G4ThreeVector uy = this->GetECEFDirection(
+        latitude, longitude, 0., 0.);
+    G4ThreeVector uz = this->GetECEFDirection(
+        latitude, longitude, 0., pi2);
+    G4RotationMatrix * rotation = new G4RotationMatrix;
+    rotation->setRows(ux, uy, uz);
+    
+    gAffineTransform = G4AffineTransform(rotation, translation);
+    gAffineTransformInv = gAffineTransform.Inverse();
+}
 
-        /* Place the volume */
-        return new G4PVPlacement(rotation, translation, logical, name,
-            gLogical, many, copyNo, false);
+G4double StepperStep(G4ThreeVector position,
+        G4double * altitude, G4double * ground,
+        int * layer) {
+    double step = 0.;
+    
+    double p[3];
+    auto ecef = gAffineTransform.TransformPoint(position);    
+    for (int i = 0; i < 3; i++) {
+        p[i] = ecef[i] / CLHEP::m;
+    }
+    turtle_stepper_step(gStepper, p, NULL, NULL, NULL, altitude,
+            ground, &step, layer);
+    
+    if(altitude) *altitude *= CLHEP::m;
+    
+    if(ground) {
+        ground[0] *= CLHEP::m;
+        ground[1] *= CLHEP::m;
+    }
+    
+    return step * CLHEP::m;
 }

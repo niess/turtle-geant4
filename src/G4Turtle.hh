@@ -25,6 +25,7 @@
 #include "G4Material.hh"
 #include "G4Types.hh"
 #include "G4PVPlacement.hh"
+#include "G4AffineTransform.hh"
 
 class G4Turtle
 {
@@ -59,25 +60,18 @@ class G4Turtle
         G4double GetResolutionFactor() const;
         void SetApproximationRange(G4double range);
         G4double GetApproximationRange() const;
-
-        /* ECEF conversion utilities */
-        G4ThreeVector GetECEFPosition(
-            G4double latitude, G4double longitude, G4double height) const;
-        G4ThreeVector GetECEFDirection(G4double latitude,
-            G4double longitude, G4double azimuth, G4double elevation) const;
-
-        /* Utility for the placement of physical sub volumes. The azimuth
-         * and zenith angles specify the orientation of the z-axis w.r.t.
-         * the local vertical, i.e. azimuth = zenith = 0 is vertical. The
-         * intrinsic rotation angle specifies a counter clock wise rotation
-         * around the rotated z-axis */
-        G4PVPlacement * PVPlacement(G4double latitude, G4double longitude,
-            G4double height, G4double azimuth, G4double zenith,
-            G4double intrinsic, G4LogicalVolume * logical,
-            const G4String & name, G4bool many = false, G4int copyNo = 0);
+        
+        void SetLocalFrame(G4double latitude, G4double longitude, G4double height=0.);
 
   protected:
         G4Turtle();
+        
+        /* FIXME: private, ECEF conversion utilities */
+        G4ThreeVector GetECEFPosition(
+            G4double latitude, G4double longitude, G4double height) const;
+        
+        G4ThreeVector GetECEFDirection(G4double latitude,
+            G4double longitude, G4double azimuth, G4double elevation) const;
 };
 
 #endif
