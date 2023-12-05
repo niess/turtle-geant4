@@ -126,7 +126,7 @@ static enum medium GetMedium(const G4ThreeVector& position, G4bool protect)
         enum medium medium = MEDIUM_EXIT;
         G4double altitude, ground[2];
         int layer[2];
-        
+
         StepperStep(position, &altitude, ground, layer);
 
         /* Check the sub-volumes */
@@ -158,7 +158,9 @@ static enum medium GetMedium(const G4ThreeVector& position, G4bool protect)
                 }
         }
 
-        if ((layer[0] < 0) || (altitude > gTopLevel) || (altitude < gBottomLevel))
+        if ((layer[0] < 0) ||
+            (altitude > gTopLevel) ||
+            (altitude < gBottomLevel))
                 medium = MEDIUM_EXIT;
         else if (layer[0] == 1)
                 medium = MEDIUM_AIR;
@@ -609,7 +611,8 @@ G4ThreeVector G4Turtle::GetECEFDirection(G4double latitude,
         return G4ThreeVector(direction[0], direction[1], direction[2]);
 }
 
-void G4Turtle::SetLocalFrame(G4double latitude, G4double longitude, G4double height)
+void G4Turtle::SetLocalFrame(
+    G4double latitude, G4double longitude, G4double height)
 {
     /* Get the translation vector */
     G4ThreeVector translation = this->GetECEFPosition(
@@ -625,16 +628,16 @@ void G4Turtle::SetLocalFrame(G4double latitude, G4double longitude, G4double hei
         latitude, longitude, 0., pi2);
     G4RotationMatrix * rotation = new G4RotationMatrix;
     rotation->setRows(ux, uy, uz);
-    
+
     gAffineTransform = G4AffineTransform(rotation, translation);
     gAffineTransformInv = gAffineTransform.Inverse();
 }
 
-G4double StepperStep(G4ThreeVector position,
-        G4double * altitude, G4double * ground,
-        int * layer) {
+G4double StepperStep(G4ThreeVector position, G4double * altitude,
+    G4double * ground, int * layer)
+{
     double step = 0.;
-    
+
     double p[3];
     auto ecef = gAffineTransform.TransformPoint(position);    
     for (int i = 0; i < 3; i++) {
@@ -642,13 +645,13 @@ G4double StepperStep(G4ThreeVector position,
     }
     turtle_stepper_step(gStepper, p, NULL, NULL, NULL, altitude,
             ground, &step, layer);
-    
+
     if(altitude) *altitude *= CLHEP::m;
-    
+
     if(ground) {
         ground[0] *= CLHEP::m;
         ground[1] *= CLHEP::m;
     }
-    
+
     return step * CLHEP::m;
 }
